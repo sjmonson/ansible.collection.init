@@ -1,0 +1,87 @@
+---
+- name: Load the user database
+  become: no
+  community.general.read_csv:
+    delimiter: ':'
+    dialect: unix
+    fieldnames: "name,password,uid,gid,comment,home,shell"
+    key: "name"
+    path: "{{ database }}"
+  register: passwd
+  delegate_to: localhost
+  run_once: true
+
+# This is not really nesssary but it gives us an
+#   easy way to confirm the database format.
+- name: Check the format of the database
+  become: no
+  fail:
+    msg: "Database {{ database }} is invalid."
+  when: item.value.password not in ['*', 'x']
+  loop: "{{ passwd.dict | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: "Fail if {{ user }} not in database"
+  become: no
+  fail:
+    msg: "The {{ user }} user in not in the local users database."
+  when: user not in passwd.dict
+  delegate_to: localhost
+  run_once: true
+
+- name: Fail if uid is blank
+  become: no
+  fail:
+    msg: "The uid field is required for {{ user }}."
+  when: passwd.dict[user].uid|length < 1
+  delegate_to: localhost
+  run_once: true
+
+- name: Store user fact
+  become: no
+  set_fact:
+    user_passwd: "{{ passwd.dict[user] }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: Configure container UNIX group
+  group:
+    name: container
+    state: present
+    gid: 4000
+
+- name: "Configure {{ user }} unix group"
+  group:
+    name: "{{ user }}"
+    state: present
+    gid: "{{ user_passwd.gid | default(user_passwd.uid, true) }}"
+
+- name: "Setup {{ user }} user"
+  user:
+    uid: "{{ user_passwd.uid }}"
+    name: "{{ user }}"
+    comment: "{{ user_passwd.comment | default(user|capitalize + ' Service Account', true) }}"
+    group: "{{ user }}"
+    groups: container
+    home: "{{ user_passwd.home | default(omit,true) }}"
+    move_home: yes
+    shell: "{{ user_passwd.shell | default(omit,true) }}"
+    password: "!"
+    state: present
+  register: user_stat
+
+- name: "Ensure lingering enabled for {{ user }} user"
+  become_user: "{{ user }}"
+  command:
+    cmd: "loginctl enable-linger {{ user }}"
+    creates: "/var/lib/systemd/linger/{{ user }}"
+
+- name: "Create systemd/user directory for {{ user }} systemd user services"
+  become_user: "{{ user }}"
+  file:
+    name: "{{ user_stat['home'] }}/.config/systemd/user"
+    setype: systemd_unit_file_t
+    state: directory

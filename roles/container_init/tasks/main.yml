@@ -1,0 +1,104 @@
+---
+- name: Warn if in check mode
+  become: no
+  debug:
+    # If we try to become a user that does not exist Ansible will throw an error.
+    msg: "WARNING: Certain tasks from this role will fail in check mode if the container user does not already exist."
+  changed_when: ansible_check_mode
+  when: ansible_check_mode
+  delegate_to: localhost
+  run_once: true
+
+- name: Run fact gathering tasks
+  include_tasks: gather_facts.yml
+
+- name: "Check if {{ container_conf.name }} service already exists"
+  become_user: "{{ container_conf.owner }}"
+  stat:
+    path: "{{ user_facts.home }}/.config/systemd/user/{{ container_conf.prefix | default(default_prefix) }}-{{ container_conf.name }}.service"
+  register: unit_file
+
+- name: "Stop {{ container_conf.name }} service"
+  become_user: "{{ container_conf.owner }}"
+  ansible.builtin.systemd:
+    name: "{{ container_conf.prefix | default(default_prefix) }}-{{ container_conf.name }}"
+    state: stopped
+    scope: user
+  when: unit_file.stat.exists
+
+- name: "Pull latest {{ container_conf.image }} container image"
+  become_user: "{{ container_conf.owner }}"
+  containers.podman.podman_image:
+    name: "{{ container_conf.repo }}/{{ container_conf.image }}"
+    tag: "{{ container_conf.tag }}"
+    pull: yes
+    state: present
+    validate_certs: yes
+
+- name: Check status of mountpoints
+  stat:
+    path: "{{ item | split(':') | first }}"
+  loop: "{{ container_conf.volumes | default(default_volumes, true) }}"
+  loop_control:
+    label: "{{ item | split(':') | first }}"
+  register: mountpoints
+
+- name: Warn if mountpoint is missing
+  debug:
+    msg:
+      - "WARNING: {{ item.item | split(':') | first }} is missing."
+      - "Playbook may fail unexpectedly."
+  when: item.stat.exists is false
+  changed_when: item.stat.exists is false
+  loop: "{{ mountpoints.results }}"
+  loop_control:
+    label: "{{ item.item | split(':') | first }}"
+
+- name: "Create {{ container_conf.name }} container"
+  become_user: "{{ container_conf.owner }}"
+  containers.podman.podman_container:
+    name: "{{ container_conf.name }}"
+    hostname: "{{ container_conf.name }}"
+    image: "{{ container_conf.repo }}/{{ container_conf.image }}:{{ container_conf.tag }}"
+    command: "{{ container_conf.command if container_conf.command is defined else omit }}"
+    user: "{{ container_conf.uid | default(0, true) }}:{{ container_conf.gid | default(0, true) }}"
+    state: created
+    # If recreate is set to no will only recreate the container on a change.
+    #  However, certain arguments break this (e.g. cmd_args).
+    recreate: yes
+    label:
+      "io.containers.autoupdate": registry
+    publish: "{{ container_conf.ports | default(default_ports, true) }}"
+    env: "{{ container_conf.env | default(default_env, true) }}"
+    volume: "{{ container_conf.volumes | default(default_volumes, true) }}"
+    generate_systemd:
+      path: "{{ user_facts.home }}/.config/systemd/user"
+      container_prefix: "{{ container_conf.prefix | default(default_prefix, true) }}"
+    cmd_args: "{{ container_conf.podman_args | default(omit, true) }}"
+
+- name: Reload user scope systemd daemon
+  become_user: "{{ container_conf.owner }}"
+  systemd:
+    daemon-reload: yes
+    scope: user
+
+- name: "Ensure {{ container_conf.name }} is enabled"
+  become_user: "{{ container_conf.owner }}"
+  ansible.builtin.systemd:
+    name: "{{ container_conf.prefix | default(default_prefix) }}-{{ container_conf.name }}"
+    enabled: yes
+    scope: user
+
+# If the role is called more than once the restart handler will
+#  run using the latest value of `container_conf`. To solve this
+#  we enqueue every value of `container_conf` and loop though them
+#  in the handler.
+- name: "Queue {{ container_conf.name }} for restart"
+  set_fact:
+    container_restart_queue: "{{
+      container_restart_queue + [container_conf]
+        if container_restart_queue is defined
+        else [container_conf]
+    }}"
+  changed_when: true # Necessary to trigger notify
+  notify: (Re)start containers

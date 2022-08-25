@@ -1,0 +1,6 @@
+---
+# defaults file for container_init
+default_prefix: container
+default_env: {}
+default_volumes: []
+default_ports: []

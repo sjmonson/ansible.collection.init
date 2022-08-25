@@ -1,0 +1,3 @@
+---
+# defaults file for user_init
+database: "vars/passwd.csv"
