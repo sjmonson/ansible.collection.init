@@ -25,15 +25,16 @@ Role Variables
   - `ports`: *Optional* List of ports in docker port format to forward from the host to the container.
   - `env`: *Optional* Dictionary of environment variables to pass to the container runtime.
   - `command`: *Optional* Command to overwrite the container image's default CMD.
-  - `podman_args`: *Optional* Additional arguments to pass podman in cli format. Note: space seperated items must be individual items in the list.
+  - `networks`: *Optional* Network mode of container. See --network in podman-create(1).
+  - `labels`: *Optional* Dictionary of container labels.
 
 Output Variables
 ----------------
 
 After the role is run the following variables will be available in the playbook:
 
-- `container_real_uid`: The `container.uid` field mapped to the host namespace. Defaults to `container.id` (root in container namespace) if uid is unset.
-- `container_real_gid`: The `container.gid` field mapped to the host namespace. Defaults to `container.id` (root in container namespace) if gid is unset.
+- `container_real_uid`: The `container.uid` field mapped to the host namespace. Defaults to `user_facts.uid` (root in container namespace) if uid is unset.
+- `container_real_gid`: The `container.gid` field mapped to the host namespace. Defaults to `user_facts.gid` (root in container namespace) if gid is unset.
 - `user_facts`: Metadata for the user hosting the container.
   - `name`: Name of the user.
   - `uid`: UID of the user.
@@ -93,7 +94,7 @@ If additional configuration is needed, tasks can be added after the role is exec
         src: files/config.conf
         dest: "{{ conf_dir }}/config.conf"
         mode: '660'
-        # Using container_real_gid and container_real_uid to set the 
+        # Using container_real_gid and container_real_uid to set the
         #  permission of files will match the scope of the container.
         owner: "{{ container_real_uid }}"
         group: "{{ container_real_gid }}"

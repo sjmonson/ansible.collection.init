@@ -65,16 +65,15 @@
     state: created
     # If recreate is set to no will only recreate the container on a change.
     #  However, certain arguments break this (e.g. cmd_args).
-    recreate: yes
-    label:
-      "io.containers.autoupdate": registry
+    recreate: no
+    label: "{{ container_conf.labels | default(default_labels, true) }}"
+    network: "{{ container_conf.networks | default(omit, true) }}"
     publish: "{{ container_conf.ports | default(default_ports, true) }}"
     env: "{{ container_conf.env | default(default_env, true) }}"
     volume: "{{ container_conf.volumes | default(default_volumes, true) }}"
     generate_systemd:
       path: "{{ user_facts.home }}/.config/systemd/user"
       container_prefix: "{{ container_conf.prefix | default(default_prefix, true) }}"
-    cmd_args: "{{ container_conf.podman_args | default(omit, true) }}"
 
 - name: Reload user scope systemd daemon
   become_user: "{{ container_conf.owner }}"

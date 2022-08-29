@@ -54,7 +54,11 @@ argument_specs:
             type: "list"
             elements: "str"
             description: "Command to overwrite the container image's default CMD."
-          podman_args:
+          networks:
             type: "list"
             elements: "str"
-            description: "Additional arguments to pass podman in cli format."
+            description: "Network mode of container. See --network in podman-create(1)."
+          labels:
+            type: "dict"
+            default: {}
+            description: "Dictionary of container labels."

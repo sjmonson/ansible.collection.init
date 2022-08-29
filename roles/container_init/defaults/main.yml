@@ -4,3 +4,4 @@ default_prefix: container
 default_env: {}
 default_volumes: []
 default_ports: []
+default_labels: {}
