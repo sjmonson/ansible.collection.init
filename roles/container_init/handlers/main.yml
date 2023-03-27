@@ -9,6 +9,8 @@
   loop: "{{ container_restart_queue }}"
   loop_control:
     label: "{{ item.name }}"
+  # Its often useful to stagger startup times
+  throttle: 1
   notify: Flush (Re)start queue
 
 # If (Re)start containers somehow runs multiple

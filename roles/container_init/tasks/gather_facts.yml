@@ -1,13 +1,13 @@
 ---
 - name: Gather user info
-  getent:
+  ansible.builtin.getent:
     database: passwd
     key: "{{ container_conf.owner }}"
 
 # In the future this should be a getent database as centralized
 #  user databases do not use the file (e.g. IdM)
 - name: Read subuid database
-  read_csv:
+  community.general.read_csv:
     path: /etc/subuid
     fieldnames: username,start,count
     key: username
@@ -17,7 +17,7 @@
 # In the future this should be a getent database as centralized
 #  user databases do not use the file (e.g. IdM)
 - name: Read subgid database
-  read_csv:
+  community.general.read_csv:
     path: /etc/subgid
     fieldnames: groupname,start,count
     key: groupname
@@ -25,7 +25,7 @@
   register: subgids
 
 - name: Export user_facts tree
-  set_fact:
+  ansible.builtin.set_fact:
     user_facts:
       name: "{{ container_conf.owner }}"
       uid: "{{ ansible_facts.getent_passwd[container_conf.owner][1]|int }}"
@@ -39,16 +39,16 @@
         end: "{{ subgids.dict[container_conf.owner].start|int + subgids.dict[container_conf.owner].count|int - 1}}"
 
 - name: Get uid and gid of the container user in the host
-  set_fact:
+  ansible.builtin.set_fact:
     container_real_uid: >-
       {{
         user_facts.subuid.start|int + container_conf.uid|int - 1
-          if container_conf.uid is defined
+          if container_conf.uid is defined and container_conf.uid|int > 0
           else user_facts.uid
       }}
     container_real_gid: >-
       {{
         user_facts.subgid.start|int + container_conf.gid|int - 1
-          if container_conf.gid is defined
+          if container_conf.gid is defined and container_conf.gid|int > 0
           else user_facts.gid
       }}

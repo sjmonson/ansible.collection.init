@@ -1,4 +1,6 @@
 ---
+# NOTE: Default values are only for documentation.
+# See https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_reuse_roles.html#specification-format
 argument_specs:
   main:
     short_description: "Main entrypoint for the container_init role."
@@ -62,3 +64,7 @@ argument_specs:
             type: "dict"
             default: {}
             description: "Dictionary of container labels."
+          systemd_new:
+            type: "bool"
+            default: yes
+            description: "Recreate the container when started by systemd."

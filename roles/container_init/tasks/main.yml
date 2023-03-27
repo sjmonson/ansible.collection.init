@@ -1,7 +1,7 @@
 ---
 - name: Warn if in check mode
   become: no
-  debug:
+  ansible.builtin.debug:
     # If we try to become a user that does not exist Ansible will throw an error.
     msg: "WARNING: Certain tasks from this role will fail in check mode if the container user does not already exist."
   changed_when: ansible_check_mode
@@ -14,7 +14,7 @@
 
 - name: "Check if {{ container_conf.name }} service already exists"
   become_user: "{{ container_conf.owner }}"
-  stat:
+  ansible.builtin.stat:
     path: "{{ user_facts.home }}/.config/systemd/user/{{ container_conf.prefix | default(default_prefix) }}-{{ container_conf.name }}.service"
   register: unit_file
 
@@ -36,7 +36,7 @@
     validate_certs: yes
 
 - name: Check status of mountpoints
-  stat:
+  ansible.builtin.stat:
     path: "{{ item | split(':') | first }}"
   loop: "{{ container_conf.volumes | default(default_volumes, true) }}"
   loop_control:
@@ -44,7 +44,7 @@
   register: mountpoints
 
 - name: Warn if mountpoint is missing
-  debug:
+  ansible.builtin.debug:
     msg:
       - "WARNING: {{ item.item | split(':') | first }} is missing."
       - "Playbook may fail unexpectedly."
@@ -65,7 +65,7 @@
     state: created
     # If recreate is set to no will only recreate the container on a change.
     #  However, certain arguments break this (e.g. cmd_args).
-    recreate: no
+    recreate: yes
     label: "{{ container_conf.labels | default(default_labels, true) }}"
     network: "{{ container_conf.networks | default(omit, true) }}"
     publish: "{{ container_conf.ports | default(default_ports, true) }}"
@@ -74,10 +74,12 @@
     generate_systemd:
       path: "{{ user_facts.home }}/.config/systemd/user"
       container_prefix: "{{ container_conf.prefix | default(default_prefix, true) }}"
+      new: "{{ container_conf.systemd_new | default(true, true) }}"
+    log_driver: "{{ container_conf.log_driver | default('journald', true) }}"
 
 - name: Reload user scope systemd daemon
   become_user: "{{ container_conf.owner }}"
-  systemd:
+  ansible.builtin.systemd:
     daemon-reload: yes
     scope: user
 
