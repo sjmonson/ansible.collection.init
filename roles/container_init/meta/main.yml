@@ -1,3 +1,4 @@
+---
 galaxy_info:
   author: Samuel Monson
   description: Role for initializing managed container services
@@ -5,7 +6,7 @@ galaxy_info:
 
   license: MIT
 
-  min_ansible_version: 2.12
+  min_ansible_version: "2.15.1"
 
   galaxy_tags: []
 

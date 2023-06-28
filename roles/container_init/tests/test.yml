@@ -1,5 +1,6 @@
 ---
-- hosts: localhost
+- name: Test play for container_init
+  hosts: localhost
   remote_user: root
   roles:
     - container_init
