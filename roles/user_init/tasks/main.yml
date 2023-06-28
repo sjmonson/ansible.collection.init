@@ -63,12 +63,12 @@
   ansible.builtin.user:
     uid: "{{ user_passwd.uid }}"
     name: "{{ user }}"
-    comment: "{{ user_passwd.comment | default(user|capitalize + ' Service Account', true) }}"
+    comment: "{{ user_passwd.comment | default(user | capitalize + ' Service Account', true) }}"
     group: "{{ user }}"
     groups: container
-    home: "{{ user_passwd.home | default(omit,true) }}"
+    home: "{{ user_passwd.home | default(omit, true) }}"
     move_home: true
-    shell: "{{ user_passwd.shell | default(omit,true) }}"
+    shell: "{{ user_passwd.shell | default(omit, true) }}"
     password: "!"
     state: present
   register: user_stat
@@ -83,5 +83,6 @@
   become_user: "{{ user }}"
   ansible.builtin.file:
     name: "{{ user_stat['home'] }}/.config/systemd/user"
+    mode: "640"
     setype: systemd_unit_file_t
     state: directory
