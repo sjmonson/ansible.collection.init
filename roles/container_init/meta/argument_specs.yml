@@ -66,5 +66,5 @@ argument_specs:
             description: "Dictionary of container labels."
           systemd_new:
             type: "bool"
-            default: yes
+            default: true
             description: "Recreate the container when started by systemd."
