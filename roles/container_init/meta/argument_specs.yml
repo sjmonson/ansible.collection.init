@@ -68,3 +68,7 @@ argument_specs:
             type: "bool"
             default: true
             description: "Recreate the container when started by systemd."
+          log_driver:
+            type: "str"
+            default: "journald"
+            description: "Sets the log driver for the container. See --log-driver in podman-create(1)."
