@@ -2,7 +2,7 @@
 
 - truthy and fqcn linting
 - Add config for ansible-lint
-- Merge pull request #1 from scrufulufugus/infra/linting
+- Merge pull request #1 from sjmonson/infra/linting
 - Add community.general collection dependency
 - Switch ansible-lint to main since latest version seems broken
 - Add linting workflow

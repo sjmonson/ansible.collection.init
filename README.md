@@ -3,7 +3,7 @@ ansible.collection.init
 
 ## A collection of Ansible roles related to initializing services.
 
-This collection can be found [here on Ansible Galaxy](https://galaxy.ansible.com/scrufulufugus/init).
+This collection can be found [here on Ansible Galaxy](https://galaxy.ansible.com/sjmonson/init).
 
 ### List of roles
 
