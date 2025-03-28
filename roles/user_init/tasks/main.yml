@@ -83,6 +83,6 @@
   become_user: "{{ user }}"
   ansible.builtin.file:
     name: "{{ user_stat['home'] }}/.config/systemd/user"
-    mode: "640"
+    mode: "0750"
     setype: systemd_unit_file_t
     state: directory
