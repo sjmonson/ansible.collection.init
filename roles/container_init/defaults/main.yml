@@ -5,3 +5,4 @@ container_init_default_env: {}
 container_init_default_volumes: []
 container_init_default_ports: []
 container_init_default_labels: {}
+default_extras: {}

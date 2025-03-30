@@ -80,6 +80,8 @@
       container_prefix: "{{ container_conf.prefix | default(container_init_default_prefix, true) }}"
       new: "{{ container_conf.systemd_new | default(true, true) }}"
     log_driver: "{{ container_conf.log_driver | default('journald', true) }}"
+  # Add extra args
+  args: "{{ container_conf.extras | default(default_extras, true) }}"
 
 - name: Reload user scope systemd daemon
   become: true
