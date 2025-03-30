@@ -5,3 +5,4 @@ default_env: {}
 default_volumes: []
 default_ports: []
 default_labels: {}
+default_extras: {}
