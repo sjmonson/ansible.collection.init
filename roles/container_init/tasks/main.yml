@@ -26,7 +26,7 @@
     scope: user
   when: unit_file.stat.exists
 
-- name: "Pull latest {{ container_conf.image }} container image"
+- name: "Pull latest {{ container_conf.repo }}/{{ container_conf.image }}:{{ container_conf.tag }} container image"
   become_user: "{{ container_conf.owner }}"
   containers.podman.podman_image:
     name: "{{ container_conf.repo }}/{{ container_conf.image }}"
