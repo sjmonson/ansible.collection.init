@@ -1,6 +1,7 @@
 ---
 # handlers file for container_init
 - name: (Re)start containers
+  become: true
   become_user: "{{ item.owner }}"
   ansible.builtin.systemd:
     name: "{{ item.prefix | default(default_prefix) }}-{{ item.name }}"

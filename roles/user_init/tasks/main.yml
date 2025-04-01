@@ -74,12 +74,14 @@
   register: user_stat
 
 - name: "Ensure lingering enabled for {{ user }} user"
+  become: true
   become_user: "{{ user }}"
   ansible.builtin.command:
     cmd: "loginctl enable-linger {{ user }}"
     creates: "/var/lib/systemd/linger/{{ user }}"
 
 - name: "Create systemd/user directory for {{ user }} systemd user services"
+  become: true
   become_user: "{{ user }}"
   ansible.builtin.file:
     name: "{{ user_stat['home'] }}/.config/systemd/user"

@@ -13,12 +13,14 @@
   ansible.builtin.include_tasks: gather_facts.yml
 
 - name: "Check if {{ container_conf.name }} service already exists"
+  become: true
   become_user: "{{ container_conf.owner }}"
   ansible.builtin.stat:
     path: "{{ user_facts.home }}/.config/systemd/user/{{ container_conf.prefix | default(default_prefix) }}-{{ container_conf.name }}.service"
   register: unit_file
 
 - name: "Stop {{ container_conf.name }} service"
+  become: true
   become_user: "{{ container_conf.owner }}"
   ansible.builtin.systemd:
     name: "{{ container_conf.prefix | default(default_prefix) }}-{{ container_conf.name }}"
@@ -27,6 +29,7 @@
   when: unit_file.stat.exists
 
 - name: "Pull latest {{ container_conf.image }} container image"
+  become: true
   become_user: "{{ container_conf.owner }}"
   containers.podman.podman_image:
     name: "{{ container_conf.repo }}/{{ container_conf.image }}"
@@ -55,6 +58,7 @@
     label: "{{ item.item | split(':') | first }}"
 
 - name: "Create {{ container_conf.name }} container"
+  become: true
   become_user: "{{ container_conf.owner }}"
   containers.podman.podman_container:
     name: "{{ container_conf.name }}"
@@ -78,12 +82,14 @@
     log_driver: "{{ container_conf.log_driver | default('journald', true) }}"
 
 - name: Reload user scope systemd daemon
+  become: true
   become_user: "{{ container_conf.owner }}"
   ansible.builtin.systemd:
     daemon-reload: true
     scope: user
 
 - name: "Ensure {{ container_conf.name }} is enabled"
+  become: true
   become_user: "{{ container_conf.owner }}"
   ansible.builtin.systemd:
     name: "{{ container_conf.prefix | default(default_prefix) }}-{{ container_conf.name }}"
