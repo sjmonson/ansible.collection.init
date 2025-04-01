@@ -47,12 +47,6 @@
   delegate_to: localhost
   run_once: true
 
-- name: Configure container UNIX group
-  ansible.builtin.group:
-    name: container
-    state: present
-    gid: 4000
-
 - name: "Configure {{ user }} unix group"
   ansible.builtin.group:
     name: "{{ user }}"
@@ -65,7 +59,6 @@
     name: "{{ user }}"
     comment: "{{ user_passwd.comment | default(user | capitalize + ' Service Account', true) }}"
     group: "{{ user }}"
-    groups: container
     home: "{{ user_passwd.home | default(omit, true) }}"
     move_home: true
     shell: "{{ user_passwd.shell | default(omit, true) }}"
