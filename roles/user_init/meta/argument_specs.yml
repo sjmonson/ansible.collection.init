@@ -7,7 +7,7 @@ argument_specs:
         type: "str"
         required: true
         description: "User account to create or update."
-      database:
+      user_init_database:
         type: "path"
         default: "vars/passwd.csv"
         description: "Path to local user database."

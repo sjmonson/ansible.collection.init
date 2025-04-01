@@ -24,7 +24,7 @@ Role Variables
 --------------
 
 - `user`: User account to create or update.
-- `database`: *Optional* Path to local user database. Defaults to `vars/passwd.csv`.
+- `user_init_database`: *Optional* Path to local user database. Defaults to `vars/passwd.csv`.
 
 Example Playbooks
 -----------------

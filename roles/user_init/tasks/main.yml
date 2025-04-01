@@ -6,7 +6,7 @@
     dialect: unix
     fieldnames: "name,password,uid,gid,comment,home,shell"
     key: "name"
-    path: "{{ database }}"
+    path: "{{ user_init_database }}"
   register: passwd
   delegate_to: localhost
   run_once: true
@@ -16,7 +16,7 @@
 - name: Check the format of the database
   become: false
   ansible.builtin.fail:
-    msg: "Database {{ database }} is invalid."
+    msg: "Database {{ user_init_database }} is invalid."
   when: item.value.password not in ['*', 'x']
   loop: "{{ passwd.dict | dict2items }}"
   loop_control:
