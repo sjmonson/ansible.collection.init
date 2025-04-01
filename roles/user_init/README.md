@@ -23,7 +23,7 @@ Fields in the passwd.csv file should be seperated by ':'. Optional fields should
 Role Variables
 --------------
 
-- `user`: User account to create or update.
+- `user_init_name`: User account to create or update.
 - `user_init_database`: *Optional* Path to local user database. Defaults to `vars/passwd.csv`.
 
 Example Playbooks

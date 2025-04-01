@@ -3,10 +3,10 @@ argument_specs:
   main:
     short_description: "Main entrypoint for the user_init role."
     options:
-      user:
+      user_init_name:
         type: "str"
         required: true
-        description: "User account to create or update."
+        description: "Username of account to create or update."
       user_init_database:
         type: "path"
         default: "vars/passwd.csv"
