@@ -1,3 +1,4 @@
 ---
 # defaults file for user_init
-database: "vars/passwd.csv"
+user_init_name: ""
+user_init_database: "vars/passwd.csv"
