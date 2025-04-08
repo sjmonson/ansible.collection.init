@@ -6,7 +6,7 @@
     dialect: unix
     fieldnames: "name,password,uid,gid,comment,home,shell"
     key: "name"
-    path: "{{ database }}"
+    path: "{{ user_init_database }}"
   register: passwd
   delegate_to: localhost
   run_once: true
@@ -16,7 +16,7 @@
 - name: Check the format of the database
   become: false
   ansible.builtin.fail:
-    msg: "Database {{ database }} is invalid."
+    msg: "Database {{ user_init_database }} is invalid."
   when: item.value.password not in ['*', 'x']
   loop: "{{ passwd.dict | dict2items }}"
   loop_control:
@@ -24,26 +24,26 @@
   delegate_to: localhost
   run_once: true
 
-- name: "Fail if {{ user }} not in database"
+- name: "Fail if {{ user_init_name }} not in database"
   become: false
   ansible.builtin.fail:
-    msg: "The {{ user }} user in not in the local users database."
-  when: user not in passwd.dict
+    msg: "The {{ user_init_name }} user in not in the local users database."
+  when: user_init_name|length == 0 or user_init_name not in passwd.dict
   delegate_to: localhost
   run_once: true
 
 - name: Fail if uid is blank
   become: false
   ansible.builtin.fail:
-    msg: "The uid field is required for {{ user }}."
-  when: passwd.dict[user].uid|length < 1
+    msg: "The uid field is required for {{ user_init_name }}."
+  when: passwd.dict[user_init_name].uid|length < 1
   delegate_to: localhost
   run_once: true
 
 - name: Store user fact
   become: false
   ansible.builtin.set_fact:
-    user_passwd: "{{ passwd.dict[user] }}"
+    user_passwd: "{{ passwd.dict[user_init_name] }}"
   delegate_to: localhost
   run_once: true
 
@@ -53,18 +53,18 @@
     state: present
     gid: 4000
 
-- name: "Configure {{ user }} unix group"
+- name: "Configure {{ user_init_name }} unix group"
   ansible.builtin.group:
-    name: "{{ user }}"
+    name: "{{ user_init_name }}"
     state: present
     gid: "{{ user_passwd.gid | default(user_passwd.uid, true) }}"
 
-- name: "Setup {{ user }} user"
+- name: "Setup {{ user_init_name }} user"
   ansible.builtin.user:
     uid: "{{ user_passwd.uid }}"
-    name: "{{ user }}"
-    comment: "{{ user_passwd.comment | default(user | capitalize + ' Service Account', true) }}"
-    group: "{{ user }}"
+    name: "{{ user_init_name }}"
+    comment: "{{ user_passwd.comment | default(user_init_name | capitalize + ' Service Account', true) }}"
+    group: "{{ user_init_name }}"
     groups: container
     home: "{{ user_passwd.home | default(omit, true) }}"
     move_home: true
@@ -73,14 +73,16 @@
     state: present
   register: user_stat
 
-- name: "Ensure lingering enabled for {{ user }} user"
-  become_user: "{{ user }}"
+- name: "Ensure lingering enabled for {{ user_init_name }} user"
+  become: true
+  become_user: "{{ user_init_name }}"
   ansible.builtin.command:
-    cmd: "loginctl enable-linger {{ user }}"
-    creates: "/var/lib/systemd/linger/{{ user }}"
+    cmd: "loginctl enable-linger {{ user_init_name }}"
+    creates: "/var/lib/systemd/linger/{{ user_init_name }}"
 
-- name: "Create systemd/user directory for {{ user }} systemd user services"
-  become_user: "{{ user }}"
+- name: "Create systemd/user directory for {{ user_init_name }} systemd user services"
+  become: true
+  become_user: "{{ user_init_name }}"
   ansible.builtin.file:
     name: "{{ user_stat['home'] }}/.config/systemd/user"
     mode: "0750"

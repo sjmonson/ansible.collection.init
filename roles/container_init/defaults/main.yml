@@ -1,7 +1,7 @@
 ---
 # defaults file for container_init
-default_prefix: container
-default_env: {}
-default_volumes: []
-default_ports: []
-default_labels: {}
+container_init_default_prefix: container
+container_init_default_env: {}
+container_init_default_volumes: []
+container_init_default_ports: []
+container_init_default_labels: {}

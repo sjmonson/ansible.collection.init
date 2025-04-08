@@ -13,20 +13,23 @@
   ansible.builtin.include_tasks: gather_facts.yml
 
 - name: "Check if {{ container_conf.name }} service already exists"
+  become: true
   become_user: "{{ container_conf.owner }}"
   ansible.builtin.stat:
-    path: "{{ user_facts.home }}/.config/systemd/user/{{ container_conf.prefix | default(default_prefix) }}-{{ container_conf.name }}.service"
+    path: "{{ user_facts.home }}/.config/systemd/user/{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}.service"
   register: unit_file
 
 - name: "Stop {{ container_conf.name }} service"
+  become: true
   become_user: "{{ container_conf.owner }}"
   ansible.builtin.systemd:
-    name: "{{ container_conf.prefix | default(default_prefix) }}-{{ container_conf.name }}"
+    name: "{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}"
     state: stopped
     scope: user
   when: unit_file.stat.exists
 
 - name: "Pull latest {{ container_conf.image }} container image"
+  become: true
   become_user: "{{ container_conf.owner }}"
   containers.podman.podman_image:
     name: "{{ container_conf.repo }}/{{ container_conf.image }}"
@@ -38,7 +41,7 @@
 - name: Check status of mountpoints
   ansible.builtin.stat:
     path: "{{ item | split(':') | first }}"
-  loop: "{{ container_conf.volumes | default(default_volumes, true) }}"
+  loop: "{{ container_conf.volumes | default(container_init_default_volumes, true) }}"
   loop_control:
     label: "{{ item | split(':') | first }}"
   register: mountpoints
@@ -55,6 +58,7 @@
     label: "{{ item.item | split(':') | first }}"
 
 - name: "Create {{ container_conf.name }} container"
+  become: true
   become_user: "{{ container_conf.owner }}"
   containers.podman.podman_container:
     name: "{{ container_conf.name }}"
@@ -66,27 +70,29 @@
     # If recreate is set to no will only recreate the container on a change.
     #  However, certain arguments break this (e.g. cmd_args).
     recreate: true
-    label: "{{ container_conf.labels | default(default_labels, true) }}"
+    label: "{{ container_conf.labels | default(container_init_default_labels, true) }}"
     network: "{{ container_conf.networks | default(omit, true) }}"
-    publish: "{{ container_conf.ports | default(default_ports, true) }}"
-    env: "{{ container_conf.env | default(default_env, true) }}"
-    volume: "{{ container_conf.volumes | default(default_volumes, true) }}"
+    publish: "{{ container_conf.ports | default(container_init_default_ports, true) }}"
+    env: "{{ container_conf.env | default(container_init_default_env, true) }}"
+    volume: "{{ container_conf.volumes | default(container_init_default_volumes, true) }}"
     generate_systemd:
       path: "{{ user_facts.home }}/.config/systemd/user"
-      container_prefix: "{{ container_conf.prefix | default(default_prefix, true) }}"
+      container_prefix: "{{ container_conf.prefix | default(container_init_default_prefix, true) }}"
       new: "{{ container_conf.systemd_new | default(true, true) }}"
     log_driver: "{{ container_conf.log_driver | default('journald', true) }}"
 
 - name: Reload user scope systemd daemon
+  become: true
   become_user: "{{ container_conf.owner }}"
   ansible.builtin.systemd:
     daemon-reload: true
     scope: user
 
 - name: "Ensure {{ container_conf.name }} is enabled"
+  become: true
   become_user: "{{ container_conf.owner }}"
   ansible.builtin.systemd:
-    name: "{{ container_conf.prefix | default(default_prefix) }}-{{ container_conf.name }}"
+    name: "{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}"
     enabled: true
     scope: user
 
