@@ -2,7 +2,7 @@
 - name: gather_facts | Gather user info
   ansible.builtin.getent:
     database: passwd
-    key: "{{ container_conf.owner }}"
+    key: "{{ container_init_conf.owner }}"
 
 # In the future this should be a getent database as centralized
 #  user databases do not use the file (e.g. IdM)
@@ -27,28 +27,28 @@
 - name: gather_facts | Export user_facts tree
   ansible.builtin.set_fact:
     user_facts:
-      name: "{{ container_conf.owner }}"
-      uid: "{{ ansible_facts.getent_passwd[container_conf.owner][1] | int }}"
-      gid: "{{ ansible_facts.getent_passwd[container_conf.owner][2] | int }}"
-      home: "{{ ansible_facts.getent_passwd[container_conf.owner][4] }}"
+      name: "{{ container_init_conf.owner }}"
+      uid: "{{ ansible_facts.getent_passwd[container_init_conf.owner][1] | int }}"
+      gid: "{{ ansible_facts.getent_passwd[container_init_conf.owner][2] | int }}"
+      home: "{{ ansible_facts.getent_passwd[container_init_conf.owner][4] }}"
       subuid:
-        start: "{{ subuids.dict[container_conf.owner].start | int }}"
-        end: "{{ subuids.dict[container_conf.owner].start | int + subuids.dict[container_conf.owner].count | int - 1 }}"
+        start: "{{ subuids.dict[container_init_conf.owner].start | int }}"
+        end: "{{ subuids.dict[container_init_conf.owner].start | int + subuids.dict[container_init_conf.owner].count | int - 1 }}"
       subgid:
-        start: "{{ subgids.dict[container_conf.owner].start | int }}"
-        end: "{{ subgids.dict[container_conf.owner].start | int + subgids.dict[container_conf.owner].count | int - 1 }}"
+        start: "{{ subgids.dict[container_init_conf.owner].start | int }}"
+        end: "{{ subgids.dict[container_init_conf.owner].start | int + subgids.dict[container_init_conf.owner].count | int - 1 }}"
 
 - name: gather_facts | Get uid and gid of the container user in the host
   ansible.builtin.set_fact:
     container_real_uid: >-
       {{
-        user_facts.subuid.start|int + container_conf.uid|int - 1
-          if container_conf.uid is defined and container_conf.uid|int > 0
+        user_facts.subuid.start|int + container_init_conf.uid|int - 1
+          if container_init_conf.uid is defined and container_init_conf.uid|int > 0
           else user_facts.uid
       }}
     container_real_gid: >-
       {{
-        user_facts.subgid.start|int + container_conf.gid|int - 1
-          if container_conf.gid is defined and container_conf.gid|int > 0
+        user_facts.subgid.start|int + container_init_conf.gid|int - 1
+          if container_init_conf.gid is defined and container_init_conf.gid|int > 0
           else user_facts.gid
       }}

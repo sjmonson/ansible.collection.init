@@ -5,7 +5,7 @@ argument_specs:
   main:
     short_description: "Main entrypoint for the container_init role."
     options:
-      container_conf:
+      container_init_conf:
         type: "dict"
         required: true
         description: "Metadata for container initialization."

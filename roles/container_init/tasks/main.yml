@@ -12,28 +12,28 @@
 - name: Run fact gathering tasks
   ansible.builtin.include_tasks: gather_facts.yml
 
-- name: "Check if {{ container_conf.name }} service already exists"
+- name: "Check if {{ container_init_conf.name }} service already exists"
   become: true
-  become_user: "{{ container_conf.owner }}"
+  become_user: "{{ container_init_conf.owner }}"
   ansible.builtin.stat:
-    path: "{{ user_facts.home }}/.config/systemd/user/{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}.service"
+    path: "{{ user_facts.home }}/.config/systemd/user/{{ container_init_conf.prefix | default(container_init_default_prefix) }}-{{ container_init_conf.name }}.service"
   register: unit_file
 
-- name: "Stop {{ container_conf.name }} service"
+- name: "Stop {{ container_init_conf.name }} service"
   become: true
-  become_user: "{{ container_conf.owner }}"
+  become_user: "{{ container_init_conf.owner }}"
   ansible.builtin.systemd:
-    name: "{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}"
+    name: "{{ container_init_conf.prefix | default(container_init_default_prefix) }}-{{ container_init_conf.name }}"
     state: stopped
     scope: user
   when: unit_file.stat.exists
 
-- name: "Pull latest {{ container_conf.image }} container image"
+- name: "Pull latest {{ container_init_conf.image }} container image"
   become: true
-  become_user: "{{ container_conf.owner }}"
+  become_user: "{{ container_init_conf.owner }}"
   containers.podman.podman_image:
-    name: "{{ container_conf.repo }}/{{ container_conf.image }}"
-    tag: "{{ container_conf.tag }}"
+    name: "{{ container_init_conf.repo }}/{{ container_init_conf.image }}"
+    tag: "{{ container_init_conf.tag }}"
     pull: true
     state: present
     validate_certs: true
@@ -41,7 +41,7 @@
 - name: Check status of mountpoints
   ansible.builtin.stat:
     path: "{{ item | split(':') | first }}"
-  loop: "{{ container_conf.volumes | default(container_init_default_volumes, true) }}"
+  loop: "{{ container_init_conf.volumes | default(container_init_default_volumes, true) }}"
   loop_control:
     label: "{{ item | split(':') | first }}"
   register: mountpoints
@@ -57,55 +57,55 @@
   loop_control:
     label: "{{ item.item | split(':') | first }}"
 
-- name: "Create {{ container_conf.name }} container"
+- name: "Create {{ container_init_conf.name }} container"
   become: true
-  become_user: "{{ container_conf.owner }}"
+  become_user: "{{ container_init_conf.owner }}"
   containers.podman.podman_container:
-    name: "{{ container_conf.name }}"
-    hostname: "{{ container_conf.name }}"
-    image: "{{ container_conf.repo }}/{{ container_conf.image }}:{{ container_conf.tag }}"
-    command: "{{ container_conf.command if container_conf.command is defined else omit }}"
-    user: "{{ container_conf.uid | default(0, true) }}:{{ container_conf.gid | default(0, true) }}"
+    name: "{{ container_init_conf.name }}"
+    hostname: "{{ container_init_conf.name }}"
+    image: "{{ container_init_conf.repo }}/{{ container_init_conf.image }}:{{ container_init_conf.tag }}"
+    command: "{{ container_init_conf.command if container_init_conf.command is defined else omit }}"
+    user: "{{ container_init_conf.uid | default(0, true) }}:{{ container_init_conf.gid | default(0, true) }}"
     state: created
     # If recreate is set to no will only recreate the container on a change.
     #  However, certain arguments break this (e.g. cmd_args).
     recreate: true
-    label: "{{ container_conf.labels | default(container_init_default_labels, true) }}"
-    network: "{{ container_conf.networks | default(omit, true) }}"
-    publish: "{{ container_conf.ports | default(container_init_default_ports, true) }}"
-    env: "{{ container_conf.env | default(container_init_default_env, true) }}"
-    volume: "{{ container_conf.volumes | default(container_init_default_volumes, true) }}"
+    label: "{{ container_init_conf.labels | default(container_init_default_labels, true) }}"
+    network: "{{ container_init_conf.networks | default(omit, true) }}"
+    publish: "{{ container_init_conf.ports | default(container_init_default_ports, true) }}"
+    env: "{{ container_init_conf.env | default(container_init_default_env, true) }}"
+    volume: "{{ container_init_conf.volumes | default(container_init_default_volumes, true) }}"
     generate_systemd:
       path: "{{ user_facts.home }}/.config/systemd/user"
-      container_prefix: "{{ container_conf.prefix | default(container_init_default_prefix, true) }}"
-      new: "{{ container_conf.systemd_new | default(true, true) }}"
-    log_driver: "{{ container_conf.log_driver | default('journald', true) }}"
+      container_prefix: "{{ container_init_conf.prefix | default(container_init_default_prefix, true) }}"
+      new: "{{ container_init_conf.systemd_new | default(true, true) }}"
+    log_driver: "{{ container_init_conf.log_driver | default('journald', true) }}"
 
 - name: Reload user scope systemd daemon
   become: true
-  become_user: "{{ container_conf.owner }}"
+  become_user: "{{ container_init_conf.owner }}"
   ansible.builtin.systemd:
     daemon-reload: true
     scope: user
 
-- name: "Ensure {{ container_conf.name }} is enabled"
+- name: "Ensure {{ container_init_conf.name }} is enabled"
   become: true
-  become_user: "{{ container_conf.owner }}"
+  become_user: "{{ container_init_conf.owner }}"
   ansible.builtin.systemd:
-    name: "{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}"
+    name: "{{ container_init_conf.prefix | default(container_init_default_prefix) }}-{{ container_init_conf.name }}"
     enabled: true
     scope: user
 
 # If the role is called more than once the restart handler will
-#  run using the latest value of `container_conf`. To solve this
-#  we enqueue every value of `container_conf` and loop though them
+#  run using the latest value of `container_init_conf`. To solve this
+#  we enqueue every value of `container_init_conf` and loop though them
 #  in the handler.
-- name: "Queue {{ container_conf.name }} for restart"
+- name: "Queue {{ container_init_conf.name }} for restart"
   ansible.builtin.set_fact:
     container_restart_queue: "{{
-      container_restart_queue + [container_conf]
+      container_restart_queue + [container_init_conf]
         if container_restart_queue is defined
-        else [container_conf]
+        else [container_init_conf]
     }}"
   changed_when: true # Necessary to trigger notify
   notify: (Re)start containers

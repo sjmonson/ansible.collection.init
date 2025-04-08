@@ -8,12 +8,12 @@ Requirements
 
 This role depends on the containers-podman ansible collection.
 
-The user specified in `container_conf.owner` must exist before the role executes.
+The user specified in `container_init_conf.owner` must exist before the role executes.
 
 Role Variables
 --------------
 
-- `container_conf`: Metadata relating to container creation.
+- `container_init_conf`: Metadata relating to container creation.
   - `owner`: User account to host the created container.
   - `name`: Name assigned to the container.
   - `repo`: Container registry where the container image lives. Use `localhost` for a local image.
@@ -58,7 +58,7 @@ The simplest use of the role is as follows:
 
   roles:
     - role: container_init
-      container_conf:
+      container_init_conf:
         owner: ubi-runner
         name: ubi_example
         repo: "registry.access.redhat.com"
@@ -78,7 +78,7 @@ If additional configuration is needed, tasks can be added after the role is exec
 
   roles:
     - role: container_init
-      container_conf:
+      container_init_conf:
         owner: ubi-runner
         name: ubi_example
         repo: "registry.access.redhat.com"
@@ -144,9 +144,9 @@ The role can also be called multiple times to setup different containers.
 
   roles:
     - role: container_init
-      container_conf: "{{ ubi_container_1 }}"
+      container_init_conf: "{{ ubi_container_1 }}"
     - role: container_init
-      container_conf: "{{ ubi_container_2 }}"
+      container_init_conf: "{{ ubi_container_2 }}"
 ```
 
 If tasks need to be run on the container user before the container can be created (such as building a local image), the fact gathering tasks can be run on their own by using `tasks_from: gather_facts` in an include_role task.
@@ -169,7 +169,7 @@ If tasks need to be run on the container user before the container can be create
         name: container_init
         tasks_from: gather_facts
       vars:
-        container_conf: "{{ smee_container }}"
+        container_init_conf: "{{ smee_container }}"
 
     - name: Copy Dockerfile to host
       become_user: "{{ smee_container.owner }}"
@@ -190,5 +190,5 @@ If tasks need to be run on the container user before the container can be create
       include_role:
         name: container_init
       vars:
-        container_conf: "{{ smee_container }}"
+        container_init_conf: "{{ smee_container }}"
 ```
