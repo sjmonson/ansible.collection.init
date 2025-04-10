@@ -5,7 +5,7 @@
 # underscores or numbers and cannot contain consecutive underscores
 namespace: sjmonson
 name: init
-version: 1.0.0
+version: 1.1.0
 
 readme: README.md
 authors:
