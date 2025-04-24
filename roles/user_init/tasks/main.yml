@@ -67,7 +67,7 @@
     group: "{{ user_init_name }}"
     groups: container
     home: "{{ user_passwd.home | default(omit, true) }}"
-    move_home: true
+    move_home: false
     shell: "{{ user_passwd.shell | default(omit, true) }}"
     password: "!"
     state: present
