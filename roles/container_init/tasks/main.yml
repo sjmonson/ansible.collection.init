@@ -66,10 +66,6 @@
     image: "{{ container_conf.repo }}/{{ container_conf.image }}:{{ container_conf.tag }}"
     command: "{{ container_conf.command if container_conf.command is defined else omit }}"
     user: "{{ container_conf.uid | default(0, true) }}:{{ container_conf.gid | default(0, true) }}"
-    state: created
-    # If recreate is set to no will only recreate the container on a change.
-    #  However, certain arguments break this (e.g. cmd_args).
-    recreate: true
     label: "{{ container_conf.labels | default(container_init_default_labels, true) }}"
     network: "{{ container_conf.networks | default(omit, true) }}"
     publish: "{{ container_conf.ports | default(container_init_default_ports, true) }}"
@@ -80,6 +76,7 @@
       container_prefix: "{{ container_conf.prefix | default(container_init_default_prefix, true) }}"
       new: "{{ container_conf.systemd_new | default(true, true) }}"
     log_driver: "{{ container_conf.log_driver | default('journald', true) }}"
+    state: created
   # Add extra args
   args: "{{ container_conf.extras | default(container_init_default_extras, true) }}"
 
