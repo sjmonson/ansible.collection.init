@@ -72,3 +72,7 @@ argument_specs:
             type: "str"
             default: "journald"
             description: "Sets the log driver for the container. See --log-driver in podman-create(1)."
+          extras:
+            type: "dict"
+            default: {}
+            description: "Dictionary of extra options for the container."

@@ -28,7 +28,7 @@
     scope: user
   when: unit_file.stat.exists
 
-- name: "Pull latest {{ container_conf.image }} container image"
+- name: "Pull latest {{ container_conf.repo }}/{{ container_conf.image }}:{{ container_conf.tag }} container image"
   become: true
   become_user: "{{ container_conf.owner }}"
   containers.podman.podman_image:
@@ -80,6 +80,8 @@
       container_prefix: "{{ container_conf.prefix | default(container_init_default_prefix, true) }}"
       new: "{{ container_conf.systemd_new | default(true, true) }}"
     log_driver: "{{ container_conf.log_driver | default('journald', true) }}"
+  # Add extra args
+  args: "{{ container_conf.extras | default(container_init_default_extras, true) }}"
 
 - name: Reload user scope systemd daemon
   become: true
