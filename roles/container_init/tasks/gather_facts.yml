@@ -52,3 +52,16 @@
           if container_conf.gid is defined and container_conf.gid|int > 0
           else user_facts.gid
       }}
+
+- name: gather_facts | Get the correct systemd service directory
+  ansible.builtin.set_fact:
+    container_init_service_facts:
+      name: "{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}"
+      directory: >-
+        {{
+          user_facts.home + "/.config/systemd/user"
+            if user_facts.uid|int != 0
+            else "/etc/systemd/system"
+        }}
+      scope: >-
+        {{ "user" if user_facts.uid|int != 0 else "system" }}

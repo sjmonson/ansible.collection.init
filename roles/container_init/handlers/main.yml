@@ -6,7 +6,7 @@
   ansible.builtin.systemd:
     name: "{{ item.prefix | default(container_init_default_prefix) }}-{{ item.name }}"
     state: restarted
-    scope: user
+    scope: "{{ 'user' if item.owner != 'root' else 'system' }}" # TODO Use scope fact
   loop: "{{ container_restart_queue }}"
   loop_control:
     label: "{{ item.name }}"
