@@ -1,0 +1,25 @@
+---
+- name: "Check for legacy {{ container_conf.name }} service"
+  become: true
+  become_user: "{{ container_conf.owner }}"
+  ansible.builtin.stat:
+    path: "{{ user_facts.home }}/.config/systemd/user/{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}.service"
+  register: unit_file
+
+- name: "Disable {{ container_conf.name }} service"
+  become: true
+  become_user: "{{ container_conf.owner }}"
+  ansible.builtin.systemd:
+    name: "{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}"
+    enabled: false
+    scope: user
+    state: stopped
+  when: unit_file.stat.exists
+
+- name: "Drop legacy {{ container_conf.name }} service"
+  become: true
+  become_user: "{{ container_conf.owner }}"
+  ansible.builtin.file:
+    path: "{{ user_facts.home }}/.config/systemd/user/{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}.service"
+    state: absent
+  when: unit_file.stat.exists

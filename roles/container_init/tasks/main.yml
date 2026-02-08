@@ -12,21 +12,8 @@
 - name: Run fact gathering tasks
   ansible.builtin.include_tasks: gather_facts.yml
 
-- name: "Check if {{ container_conf.name }} service already exists"
-  become: true
-  become_user: "{{ container_conf.owner }}"
-  ansible.builtin.stat:
-    path: "{{ user_facts.home }}/.config/systemd/user/{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}.service"
-  register: unit_file
-
-- name: "Stop {{ container_conf.name }} service"
-  become: true
-  become_user: "{{ container_conf.owner }}"
-  ansible.builtin.systemd:
-    name: "{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}"
-    state: stopped
-    scope: user
-  when: unit_file.stat.exists
+- name: Run legacy cleanup tasks
+  ansible.builtin.include_tasks: legacy.yml
 
 - name: "Pull latest {{ container_conf.repo }}/{{ container_conf.image }}:{{ container_conf.tag }} container image"
   become: true
@@ -66,20 +53,14 @@
     image: "{{ container_conf.repo }}/{{ container_conf.image }}:{{ container_conf.tag }}"
     command: "{{ container_conf.command if container_conf.command is defined else omit }}"
     user: "{{ container_conf.uid | default(0, true) }}:{{ container_conf.gid | default(0, true) }}"
-    state: created
-    # If recreate is set to no will only recreate the container on a change.
-    #  However, certain arguments break this (e.g. cmd_args).
-    recreate: true
     label: "{{ container_conf.labels | default(container_init_default_labels, true) }}"
     network: "{{ container_conf.networks | default(omit, true) }}"
     publish: "{{ container_conf.ports | default(container_init_default_ports, true) }}"
     env: "{{ container_conf.env | default(container_init_default_env, true) }}"
     volume: "{{ container_conf.volumes | default(container_init_default_volumes, true) }}"
-    generate_systemd:
-      path: "{{ user_facts.home }}/.config/systemd/user"
-      container_prefix: "{{ container_conf.prefix | default(container_init_default_prefix, true) }}"
-      new: "{{ container_conf.systemd_new | default(true, true) }}"
+    quadlet_filename: "{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}"
     log_driver: "{{ container_conf.log_driver | default('journald', true) }}"
+    state: quadlet
   # Add extra args
   args: "{{ container_conf.extras | default(container_init_default_extras, true) }}"
 
