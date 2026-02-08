@@ -23,7 +23,7 @@ tags: ['container', 'podman', 'user', 'system', 'linux', 'application']
 # L(specifiers,https://python-semanticversion.readthedocs.io/en/latest/#requirement-specification). Multiple version
 # range specifiers can be set and are separated by ','
 dependencies: {
-  'containers.podman': '>=1.9.4',
+  'containers.podman': '>=1.18.2',
   'community.general': '>=7.1.0'
 }
 
