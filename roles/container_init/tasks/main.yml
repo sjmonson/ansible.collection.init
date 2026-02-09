@@ -102,9 +102,11 @@
 - name: "Queue {{ container_conf.name }} for restart"
   ansible.builtin.set_fact:
     container_restart_queue: "{{
-      container_restart_queue + [container_conf]
+      container_restart_queue + [queue_item]
         if container_restart_queue is defined
-        else [container_conf]
+        else [queue_item]
     }}"
   changed_when: true # Necessary to trigger notify
   notify: (Re)start containers
+  vars:
+    queue_item: "{{ container_conf | combine({'service_facts': container_init_service_facts}) }}"
