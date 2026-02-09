@@ -4,9 +4,9 @@
   become: true
   become_user: "{{ item.owner }}"
   ansible.builtin.systemd:
-    name: "{{ item.prefix | default(container_init_default_prefix) }}-{{ item.name }}"
+    name: "{{ item.service_facts.name }}"
     state: restarted
-    scope: user
+    scope: "{{ item.service_facts.scope }}"
   loop: "{{ container_restart_queue }}"
   loop_control:
     label: "{{ item.name }}"

@@ -13,6 +13,7 @@
     key: username
     delimiter: ':'
   register: subuids
+  when: ansible_facts.getent_passwd[container_conf.owner][1] | int != 0
 
 # In the future this should be a getent database as centralized
 #  user databases do not use the file (e.g. IdM)
@@ -23,20 +24,27 @@
     key: groupname
     delimiter: ':'
   register: subgids
+  when: ansible_facts.getent_passwd[container_conf.owner][1] | int != 0
 
-- name: gather_facts | Export user_facts tree
+- name: gather_facts | Export basic user_facts
   ansible.builtin.set_fact:
     user_facts:
       name: "{{ container_conf.owner }}"
       uid: "{{ ansible_facts.getent_passwd[container_conf.owner][1] | int }}"
       gid: "{{ ansible_facts.getent_passwd[container_conf.owner][2] | int }}"
       home: "{{ ansible_facts.getent_passwd[container_conf.owner][4] }}"
+
+- name: gather_facts | Add subuid/subgid ranges to user_facts
+  ansible.builtin.set_fact:
+    user_facts: "{{ user_facts | combine(subid_ranges) }}"
+  vars:
+    subid_ranges:
       subuid:
-        start: "{{ subuids.dict[container_conf.owner].start | int }}"
-        end: "{{ subuids.dict[container_conf.owner].start | int + subuids.dict[container_conf.owner].count | int - 1 }}"
+        start: "{{ 0 if user_facts.uid | int == 0 else subuids.dict[container_conf.owner].start | int }}"
+        end: "{{ 65535 if user_facts.uid | int == 0 else subuids.dict[container_conf.owner].start | int + subuids.dict[container_conf.owner].count | int - 1 }}"
       subgid:
-        start: "{{ subgids.dict[container_conf.owner].start | int }}"
-        end: "{{ subgids.dict[container_conf.owner].start | int + subgids.dict[container_conf.owner].count | int - 1 }}"
+        start: "{{ 0 if user_facts.uid | int == 0 else subgids.dict[container_conf.owner].start | int }}"
+        end: "{{ 65535 if user_facts.uid | int == 0 else subgids.dict[container_conf.owner].start | int + subgids.dict[container_conf.owner].count | int - 1 }}"
 
 - name: gather_facts | Get uid and gid of the container user in the host
   ansible.builtin.set_fact:
@@ -52,3 +60,16 @@
           if container_conf.gid is defined and container_conf.gid|int > 0
           else user_facts.gid
       }}
+
+- name: gather_facts | Get the correct systemd service directory
+  ansible.builtin.set_fact:
+    container_init_service_facts:
+      name: "{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}"
+      directory: >-
+        {{
+          user_facts.home + "/.config/systemd/user"
+            if user_facts.uid|int != 0
+            else "/etc/systemd/system"
+        }}
+      scope: >-
+        {{ "user" if user_facts.uid|int != 0 else "system" }}

@@ -16,16 +16,16 @@
   become: true
   become_user: "{{ container_conf.owner }}"
   ansible.builtin.stat:
-    path: "{{ user_facts.home }}/.config/systemd/user/{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}.service"
+    path: "{{ container_init_service_facts.directory }}/{{ container_init_service_facts.name }}.service"
   register: unit_file
 
 - name: "Stop {{ container_conf.name }} service"
   become: true
   become_user: "{{ container_conf.owner }}"
   ansible.builtin.systemd:
-    name: "{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}"
+    name: "{{ container_init_service_facts.name }}"
     state: stopped
-    scope: user
+    scope: "{{ container_init_service_facts.scope }}"
   when: unit_file.stat.exists
 
 - name: "Pull latest {{ container_conf.repo }}/{{ container_conf.image }}:{{ container_conf.tag }} container image"
@@ -66,20 +66,17 @@
     image: "{{ container_conf.repo }}/{{ container_conf.image }}:{{ container_conf.tag }}"
     command: "{{ container_conf.command if container_conf.command is defined else omit }}"
     user: "{{ container_conf.uid | default(0, true) }}:{{ container_conf.gid | default(0, true) }}"
-    state: created
-    # If recreate is set to no will only recreate the container on a change.
-    #  However, certain arguments break this (e.g. cmd_args).
-    recreate: true
     label: "{{ container_conf.labels | default(container_init_default_labels, true) }}"
     network: "{{ container_conf.networks | default(omit, true) }}"
     publish: "{{ container_conf.ports | default(container_init_default_ports, true) }}"
     env: "{{ container_conf.env | default(container_init_default_env, true) }}"
     volume: "{{ container_conf.volumes | default(container_init_default_volumes, true) }}"
     generate_systemd:
-      path: "{{ user_facts.home }}/.config/systemd/user"
+      path: "{{ container_init_service_facts.directory }}"
       container_prefix: "{{ container_conf.prefix | default(container_init_default_prefix, true) }}"
       new: "{{ container_conf.systemd_new | default(true, true) }}"
     log_driver: "{{ container_conf.log_driver | default('journald', true) }}"
+    state: created
   # Add extra args
   args: "{{ container_conf.extras | default(container_init_default_extras, true) }}"
 
@@ -88,15 +85,15 @@
   become_user: "{{ container_conf.owner }}"
   ansible.builtin.systemd:
     daemon-reload: true
-    scope: user
+    scope: "{{ container_init_service_facts.scope }}"
 
 - name: "Ensure {{ container_conf.name }} is enabled"
   become: true
   become_user: "{{ container_conf.owner }}"
   ansible.builtin.systemd:
-    name: "{{ container_conf.prefix | default(container_init_default_prefix) }}-{{ container_conf.name }}"
+    name: "{{ container_init_service_facts.name }}"
     enabled: true
-    scope: user
+    scope: "{{ container_init_service_facts.scope }}"
 
 # If the role is called more than once the restart handler will
 #  run using the latest value of `container_conf`. To solve this
@@ -105,9 +102,11 @@
 - name: "Queue {{ container_conf.name }} for restart"
   ansible.builtin.set_fact:
     container_restart_queue: "{{
-      container_restart_queue + [container_conf]
+      container_restart_queue + [queue_item]
         if container_restart_queue is defined
-        else [container_conf]
+        else [queue_item]
     }}"
   changed_when: true # Necessary to trigger notify
   notify: (Re)start containers
+  vars:
+    queue_item: "{{ container_conf | combine({'service_facts': container_init_service_facts}) }}"
